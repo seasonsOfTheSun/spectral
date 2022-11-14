@@ -1,11 +1,11 @@
 import utils
 from info_measures import SingleInfo,PairInfo
 
-gene_entropy = utils.load_entropy_df()
-gene_df      = utils.load_gene_df()
+gene_df = utils.load_gene_df()
+q = np.quantile(gene_df.std(), 0.995)
+genes = gene_df.columns[gene_df.std() > q]
+n_genes = len(genes)
 
-selected_genes = gene_entropy.index[(gene_entropy["std"] > 0.3)]
-n_genes = len(selected_genes)
 tick = 0
 N = (n_genes*(n_genes-1)/2)
 for i,j in it.combinations(selected_genes,2):

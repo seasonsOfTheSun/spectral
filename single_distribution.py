@@ -5,12 +5,12 @@ from info_measures import SingleInfo
 import pandas as pd
 import utils
 
-prefix = "data/raw/CRISPR_gene_effect.csv"
-gene_df = utils.load_gene_df(prefix)
+
+gene_df = utils.load_gene_df()
 n_genes = gene_df.shape[1]
 out = {}
 for i in range(n_genes):
-  print(round(i/n,5))
+  print(round(i/n_genes,5))
   try:
     gene=SingleInfo(gene_df.iloc[:,i], n_bins=50)
     out[i]={}
