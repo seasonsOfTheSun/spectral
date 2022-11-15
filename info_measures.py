@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.stats
-import sklearn.metrics
+import itertools as it
 
 @np.vectorize
 def gauss_minus_log_p(x, mean, std):

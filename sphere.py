@@ -34,7 +34,7 @@ def spherical_spring_layout(G,
 
     if pos is None:
         # random initial positions
-        pos = np.asarray(seed.rand(nnodes, dim), dtype=A.dtype)
+        pos = np.asarray(seed.randn(nnodes, dim), dtype=A.dtype)
     else:
         # make sure positions are of same type as matrix
         pos = pos.astype(A.dtype)
@@ -84,21 +84,22 @@ def spherical_spring_layout(G,
 
 
 
-        displacement_sphere = pos
-        length_sphere = np.sqrt((displacement_sphere**2).sum(axis=1))
-        sign_sphere = np.where(length_sphere > target_radius, -1, 1)
-        delta_pos_sphere = (sign_sphere*displacement_sphere.T * t_sphere / length_sphere).T
+#        displacement_sphere = pos
+#        length_sphere = np.sqrt((displacement_sphere**2).sum(axis=1))
+#        sign_sphere = np.where(length_sphere > target_radius, -1, 1)
+#        delta_pos_sphere = (sign_sphere*displacement_sphere.T * t_sphere / length_sphere).T
 
         pos += delta_pos
-        pos += delta_pos_sphere
+#        pos += delta_pos_sphere
         # cool temperature
         t -= dt
-        t_sphere -= dt_sphere
+#        t_sphere -= dt_sphere
         if (np.linalg.norm(delta_pos) / nnodes) < threshold:
             break
 
     # project onto sphere surface
     pos = (pos.T/np.linalg.norm(pos, axis=1)).T
+
     pos = dict(zip(nodelist, pos))
     return pos
 
