@@ -1,8 +1,9 @@
-brew install wget
-pip install gseapy
+#brew install wget
+#pip install gseapy
 wget https://ndownloader.figshare.com/files/35020903
 mkdir data
 mkdir data/raw
+mkdir data/intermediate
 mv 35020903 data/raw/sample_info.csv
 # https://depmap.org/portal/download/
 # CRISPR_gene_effect.csv
