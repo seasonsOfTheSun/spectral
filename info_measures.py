@@ -85,6 +85,9 @@ class PairInfo:
     self.xintervals = list(zip(xbins[:-1],xbins[1:]))
     self.yintervals = list(zip(ybins[:-1],ybins[1:]))
 
+    self.info1 = SingleInfo(self.v1)
+    self.info2 = SingleInfo(self.v2)
+
   def draw_ellipse(self,ax,r = 1,color='r'):
     # Covariance Recovered from Samples
     t = np.linspace(0, 2*np.pi, 100)
@@ -112,11 +115,9 @@ class PairInfo:
         out+=p*-np.log(block_p_from_cdf(self.distrib.cdf, xinterval,yinterval))
     return out
 
+  def independent_entropy(self):
+      return self.info1.empirical_entropy() + self.info2.empirical_entropy()
 
-  def individual_entropy(self):
-    out = 0
-    for p,block in zip(self.p_intervals.flatten(), it.product(self.xintervals,self.yintervals)):
-      xinterval,yinterval = block
-      if p != 0:
-        out+=p*-np.log(block_p_from_cdf(self.distrib.cdf, xinterval,yinterval))
-    return out
+
+  def independent_cross_to_normal(self):
+      return self.info1.cross_to_normal() + self.info2.cross_to_normal()
