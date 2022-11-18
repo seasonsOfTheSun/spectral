@@ -25,40 +25,42 @@ def get_evecs(G, n_evectors = 50):
   evecs = evecs[:,::-1]
   return e,evecs
 
-gene_df = load_gene_df()
-G = umap_network(gene_df)
-e,evecs = get_evecs(G)
+if __name__ == '__main__':
 
-pd.DataFrame(evecs, index=gene_df.index).to_csv("data/intermediate/evectors.csv")
-pd.Series(e).to_csv("data/intermediate/evalues.csv")
+    gene_df = load_gene_df()
+    G = umap_network(gene_df)
+    e,evecs = get_evecs(G)
 
-q = np.quantile(gene_df.std(), 0.995)
-genes = gene_df.columns[gene_df.std() > q]
-n_genes = len(genes)
-n_evectors = evecs.shape[1]
-N = n_genes*n_evectors
-out = {}
+    pd.DataFrame(evecs, index=gene_df.index).to_csv("data/intermediate/evectors.csv")
+    pd.Series(e).to_csv("data/intermediate/evalues.csv")
 
-tick = 0
-for i in range(n_evectors):
-  for j in genes:
-    pair = PairInfo(gene_df.loc[:,j],evecs[:,i])
+    q = np.quantile(gene_df.std(), 0.995)
+    genes = gene_df.columns[gene_df.std() > q]
+    n_genes = len(genes)
+    n_evectors = evecs.shape[1]
+    N = n_genes*n_evectors
+    out = {}
 
-    part1 = SingleInfo(pair.v1)
-    part2 = SingleInfo(pair.v2)
+    tick = 0
+    for i in range(n_evectors):
+      for j in genes:
+        pair = PairInfo(gene_df.loc[:,j],evecs[:,i])
 
-    temp = {}
-    temp["indep_cross_to_normal"] = part1.cross_to_normal() + part2.cross_to_normal()
-    temp["indep_entropy"] = part1.empirical_entropy() + part2.empirical_entropy()
-    temp["cross_to_normal"] = pair.cross_to_normal()
-    temp["empirical_entropy"] = pair.empirical_entropy()
-    temp["gene"] = j
-    temp["evec"] = i
+        part1 = SingleInfo(pair.v1)
+        part2 = SingleInfo(pair.v2)
 
-    out[(i,j)] = temp
+        temp = {}
+        temp["indep_cross_to_normal"] = part1.cross_to_normal() + part2.cross_to_normal()
+        temp["indep_entropy"] = part1.empirical_entropy() + part2.empirical_entropy()
+        temp["cross_to_normal"] = pair.cross_to_normal()
+        temp["empirical_entropy"] = pair.empirical_entropy()
+        temp["gene"] = j
+        temp["evec"] = i
 
-    tick += 1
-    print(round(tick/N, 3), end="\r")
+        out[(i,j)] = temp
 
-evec_df = pd.DataFrame(out)
-evec_df.T.to_csv("data/intermediate/gene_evector_entropy.csv")
+        tick += 1
+        print(round(tick/N, 3), end="\r")
+
+    evec_df = pd.DataFrame(out)
+    evec_df.T.to_csv("data/intermediate/gene_evector_entropy.csv")
