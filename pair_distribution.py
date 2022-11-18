@@ -30,4 +30,4 @@ for i,j in it.combinations(selected_genes,2):
   tick += 1
   print(round(tick/N, 3))
 
-pd.DataFrame(out).transpose().to_csv("data/intermediate/gene_pair_entropy.csv", index=None).T
+pd.DataFrame(out).to_csv("data/intermediate/gene_pair_entropy.csv", index=None)
