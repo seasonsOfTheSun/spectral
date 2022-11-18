@@ -26,4 +26,4 @@ for i in range(n_genes):
 
 gene_entropy = pd.DataFrame(out).transpose()
 gene_entropy.sort_values("normal_entropy")
-gene_entropy.to_csv(prefix + "raw/gene_entropy.csv")
+gene_entropy.to_csv("data/intermediate/gene_entropy.csv")
