@@ -1,6 +1,4 @@
 from info_measures import SingleInfo, PairInfo
-from utils import *
-
 import networkx as nx
 import umap
 import numpy as np
@@ -25,42 +23,59 @@ def get_evecs(G, n_evectors = 50):
   evecs = evecs[:,::-1]
   return e,evecs
 
-if __name__ == '__main__':
+def calculate_information(evecs,n_evectors=None):
 
-    gene_df = load_gene_df()
-    G = umap_network(gene_df)
-    e,evecs = get_evecs(G)
-
-    pd.DataFrame(evecs, index=gene_df.index).to_csv("data/intermediate/evectors.csv")
-    pd.Series(e).to_csv("data/intermediate/evalues.csv")
-
-    q = np.quantile(gene_df.std(), 0.995)
-    genes = gene_df.columns[gene_df.std() > q]
-    n_genes = len(genes)
+  if n_evectors == None:
     n_evectors = evecs.shape[1]
-    N = n_genes*n_evectors
-    out = {}
+  mi = np.zeros((n_evectors,n_evectors))
+  kl = np.zeros((n_evectors,n_evectors))
 
-    tick = 0
-    for i in range(n_evectors):
-      for j in genes:
-        pair = PairInfo(gene_df.loc[:,j],evecs[:,i])
+  for i,j in it.product(range(n_evectors), range(n_evectors)):
+    if i == j:
+      mi[i,j] = np.nan
+      kl[i,j] = np.nan
+    else:
+      # pair Class that calculates numerous information related
+      # stats for the two eigenvectors together
+      pair = PairInfo(evecs[:,i],evecs[:,j])
+      # calcualte similarity (KL divergennce) to normal of their joint distributions
+      kl[i,j] = pair.cross_to_normal() - pair.empirical_entropy()
+      # calcualte mutual information betweenn pairs of eigenvectors
+      independent_entropy = pair.part1.empirical_entropy() + pair.part2.empirical_entropy()
+      mi[i,j] = independent_entropy - pair.empirical_entropy()
+  return mi, kl
 
-        part1 = SingleInfo(pair.v1)
-        part2 = SingleInfo(pair.v2)
+def mi_network(mi):
+  G = nx.from_numpy_array(mi.clip(0)) # clip negative edge weights since they are due to approximation errors
+  for i in G.nodes():
+    G.remove_edge(i,i)
+  return G
 
-        temp = {}
-        temp["indep_cross_to_normal"] = part1.cross_to_normal() + part2.cross_to_normal()
-        temp["indep_entropy"] = part1.empirical_entropy() + part2.empirical_entropy()
-        temp["cross_to_normal"] = pair.cross_to_normal()
-        temp["empirical_entropy"] = pair.empirical_entropy()
-        temp["gene"] = j
-        temp["evec"] = i
+def identify_redundant_edges(G,edge_list=None):
 
-        out[(i,j)] = temp
+  if edge_list == None:
+    edge_list = list(G.edges())
 
-        tick += 1
-        print(round(tick/N, 3), end="\r")
+  sp_list = []
+  w_list = []
+  sp_dict = dict(nx.shortest_path_length(G, weight='weight'))
+  
+  for i,j in edge_list:
+    w_list.append(G.edges()[(i,j)]['weight'])
+    sp_list.append(sp_dict[i][j])
+  sp_list = np.array(sp_list)
+  w_list = np.array(w_list)
+  return edge_list, w_list, sp_list
 
-    evec_df = pd.DataFrame(out)
-    evec_df.T.to_csv("data/intermediate/gene_evector_entropy.csv")
+def transitivize_mi_network(G,edge_list, w_list, sp_list):
+  pruned_G = G.copy()
+  tol = 0.01 # set some tolerance to avoid floating precision issues
+  for i,uv in enumerate(edge_list):
+    u,v = uv
+    w_list, sp_list
+    if w_list[i] - sp_list[i] > tol:
+      pruned_G.remove_edge(u,v)
+  return pruned_G
+
+
+

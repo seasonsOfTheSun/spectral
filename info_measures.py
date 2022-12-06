@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.stats
+import sklearn.metrics
 import itertools as it
 
 @np.vectorize
@@ -70,8 +71,12 @@ def block_p_from_cdf(cdf, x_interval, y_interval):
 class PairInfo:
 
   def __init__(self, v1, v2,n_bins=50):
+
     self.v1 = v1
     self.v2 = v2
+
+    self.part1 = SingleInfo(v1)
+    self.part2 = SingleInfo(v2)
 
     self.xy = np.vstack([v1,v2]).T
     self.covariance = np.cov(self.xy.T)
@@ -115,9 +120,23 @@ class PairInfo:
         out+=p*-np.log(block_p_from_cdf(self.distrib.cdf, xinterval,yinterval))
     return out
 
-  def independent_entropy(self):
-      return self.info1.empirical_entropy() + self.info2.empirical_entropy()
+  def individual_entropy(self):
+    out = 0
+    for p,block in zip(self.p_intervals.flatten(), it.product(self.xintervals,self.yintervals)):
+      xinterval,yinterval = block
+      if p != 0:
+        out+=p*-np.log(block_p_from_cdf(self.distrib.cdf, xinterval,yinterval))
+    return out
 
+  def collect(self):
 
-  def independent_cross_to_normal(self):
-      return self.info1.cross_to_normal() + self.info2.cross_to_normal()
+    temp = {}
+    temp["individual_cross_to_normal"] = self.part1.cross_to_normal() + self.part2.cross_to_normal()
+    temp["individual_entropy"] = self.part1.empirical_entropy() + self.part2.empirical_entropy()
+    temp["cross_to_normal"] = self.cross_to_normal()
+    temp["empirical_entropy"] = self.empirical_entropy()
+    temp["xscale"] = self.xscale
+    temp["yscale"] = self.yscale
+    temp["theta"] = np.arctan2(self.rot[0,0],self.rot[0,1])
+    return temp
+
