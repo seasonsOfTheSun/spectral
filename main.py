@@ -6,17 +6,18 @@ import pandas as pd
 import scipy.sparse
 import itertools as it
 
-def umap_network(X, nneighbors = 10, metric = 'euclidean'):
+def umap_network(X, nodes=None, nneighbors = 10, metric = 'euclidean'):
     rndstate = np.random.RandomState(nneighbors)
-    nodes = list(X.index)
+    if nodes == None:
+        nodes = list(X.index)
     G,_,_ = umap.umap_.fuzzy_simplicial_set(X, 10, rndstate, metric)
     G = nx.from_scipy_sparse_matrix(G)
-    return nx.relabel_nodes(G, dict(enumerate(X.index)).get)
+    return nx.relabel_nodes(G, dict(enumerate(nodes)).get)
 
 def get_evecs(G, n_evectors = 50):
   
   nodelist = np.array(G.nodes())
-  # rescale rows and columns by degree                                                                                                                              
+  # rescale rows and columns by degree
   normalized_adjacency = scipy.sparse.eye(G.order()) - nx.normalized_laplacian_matrix(G)
   e,evecs = scipy.sparse.linalg.eigsh(normalized_adjacency, k = n_evectors)
   e = e[::-1]
@@ -51,31 +52,27 @@ def mi_network(mi):
     G.remove_edge(i,i)
   return G
 
-def identify_redundant_edges(G,edge_list=None):
 
-  if edge_list == None:
-    edge_list = list(G.edges())
+def transitivize_mi_network(mi_G):
+    """ this is it. """
+    d_lengths = dict(nx.shortest_paths.all_pairs_dijkstra_path_length(mi_G,weight='distance'))
+    d_paths = dict(nx.shortest_paths.all_pairs_dijkstra_path(mi_G,weight='distance'))
+    pruned_G = mi_G.copy()
+    for u,v in mi_G.edges():
+        # print("all intermediate steps must be more than:", mi_G.edges()[(u,v)]['mutual_information'])
+        single_step = mi_G.edges()[(u,v)]['mutual_information']
+        # print("all intermediate steps must be more than:",-np.log(mi_G.edges()[(u,v)]['distance'])/n)
+        path = d_paths[u][v]
 
-  sp_list = []
-  w_list = []
-  sp_dict = dict(nx.shortest_path_length(G, weight='weight'))
-  
-  for i,j in edge_list:
-    w_list.append(G.edges()[(i,j)]['weight'])
-    sp_list.append(sp_dict[i][j])
-  sp_list = np.array(sp_list)
-  w_list = np.array(w_list)
-  return edge_list, w_list, sp_list
-
-def transitivize_mi_network(G,edge_list, w_list, sp_list):
-  pruned_G = G.copy()
-  tol = 0.01 # set some tolerance to avoid floating precision issues
-  for i,uv in enumerate(edge_list):
-    u,v = uv
-    w_list, sp_list
-    if w_list[i] - sp_list[i] > tol:
-      pruned_G.remove_edge(u,v)
-  return pruned_G
-
-
-
+        delete=True
+        for i,j in zip(path[:-1],path[1:]):
+            # print(mi_G.edges()[(i,j)]['mutual_information'])
+            tol = 0.00001 # avoid floating point nonsense
+            if single_step >= mi_G.edges()[(i,j)]['mutual_information']-tol:
+                delete=False
+        if delete:
+            # print("deleting")
+            pruned_G.remove_edge(u,v)
+        else:
+            print("not deleting")
+    return pruned_G
