@@ -134,29 +134,29 @@ def mi_network(mi,nodes,n = 100):
     mi_G = nx.relabel_nodes(mi_G, dict(enumerate(nodes)).get)
     return mi_G
 
+
+​
 def verbose_pruning(mi_G):
-    tol = 0.001 # tol is there to avoid floating point nonsense or maybe provide a useful role not sure yet
+    tol = 0.001 # tol is there to avoid floating point nonsense or maybe provide a useful role not sure yet                                         
     d_lengths = dict(nx.shortest_paths.all_pairs_dijkstra_path_length(mi_G,weight='distance'))
     d_paths = dict(nx.shortest_paths.all_pairs_dijkstra_path(mi_G,weight='distance'))
     pruned_G = mi_G.copy()
-
+​
     out = []
     for u,v in mi_G.edges():
         single_step = mi_G.edges()[(u,v)]['mutual_information']
         path = d_paths[u][v]
-
-        delete=True
-        for i,j in zip(path[:-1],path[1:]):
-            # print(mi_G.edges()[(i,j)]['mutual_information'])
-            # tol is there toavoid floating point nonsense or maybe provide a useful role not sure yet
-            if single_step >= mi_G.edges()[(i,j)]['mutual_information']-tol:
-                delete=False
-        if delete:
-            pruned_G.remove_edge(u,v)
-        min_in_path = min([mi_G.edges()[(i,j)]['mutual_information'] for i,j in zip(path[:-1],path[1:])])
-        out.append([single_step, min_in_path, delete])
+        mis_in_path = [mi_G.edges()[(i,j)]['mutual_information'] for i,j in zip(path[:-1],path[1:])]
+        
+        out.append([single_step,
+                    min(mis_in_path),
+                    np.mean(mis_in_path),
+                    np.max(mis_in_path),
+                    np.median(mis_in_path),
+                    mi_G.degree(u,weight='mutual_information'),
+                    mi_G.degree(v,weight='mutual_information')])
     return out
-
+​
 def transitivize_mi_network(mi_G):
     """ this is it. """
     d_lengths = dict(nx.shortest_paths.all_pairs_dijkstra_path_length(mi_G,weight='distance'))
