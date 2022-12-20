@@ -13,7 +13,7 @@ def integral_gauss_minus_log_p(a,b, mean, std):
 class SingleInfo:
   """ Contains various information-theoretic descriptors for a 1-dimennsional dataset"""
 
-  def __init__(self, v, n_bins=10):
+  def __init__(self, v, n_bins=50):
     self.v=v
     self.mean = np.mean(self.v)
     self.std  = np.std(self.v)
@@ -75,6 +75,9 @@ class PairInfo:
     self.v1 = v1
     self.v2 = v2
 
+    assert len(self.v1) == len(self.v2)
+    n_obs = len(self.v2)
+
     self.part1 = SingleInfo(v1)
     self.part2 = SingleInfo(v2)
 
@@ -86,7 +89,7 @@ class PairInfo:
 
     # calculate a histogram and treat it as empirical probability distribution.
     count, xbins,ybins = np.histogram2d(v1,v2, bins=n_bins)
-    self.p_intervals = count/len(self.xy.flatten())
+    self.p_intervals = count/n_obs
     self.xintervals = list(zip(xbins[:-1],xbins[1:]))
     self.yintervals = list(zip(ybins[:-1],ybins[1:]))
 

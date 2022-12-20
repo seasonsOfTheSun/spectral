@@ -154,28 +154,47 @@ def verbose_pruning(mi_G):
                     mi_G.degree(v,weight='mutual_information')])
     return out
 
-def transitivize_mi_network(mi_G):
+def attach_feature_nodes(mi_G,feature_mi,n=100,inplace=True):
+    
+    if inplace == False:
+        mi_G = mi_G.copy()
+    
+    for i in mi_G.nodes():
+        mi_G.nodes()[i]["SEV_or_feature"] = "SEV"
+
+    for i,v in feature_mi.iterrows():
+        for j,mi in v.items():
+            mi_G.add_edge(i,j,mutual_information = mi, distance = np.exp(-n*mi))
+            mi_G.nodes()[j]["SEV_or_feature"] = "feature"
+    
+    if inplace == False:
+        return mi_G
+
+
+def transitivize_mi_network(mi_G, features_only = False, tol = 0.1):
     """ this is it. """
     d_lengths = dict(nx.shortest_paths.all_pairs_dijkstra_path_length(mi_G,weight='distance'))
     d_paths = dict(nx.shortest_paths.all_pairs_dijkstra_path(mi_G,weight='distance'))
     pruned_G = mi_G.copy()
     for u,v in mi_G.edges():
-        # print("all intermediate steps must be more than:", mi_G.edges()[(u,v)]['mutual_information'])
+
+        if features_only == True:
+            if (mi_G.nodes()[u]["SEV_or_feature"] == "SEV" and
+                mi_G.nodes()[v]["SEV_or_feature"] == "SEV"):
+                continue
+
         single_step = mi_G.edges()[(u,v)]['mutual_information']
-        # print("all intermediate steps must be more than:",-np.log(mi_G.edges()[(u,v)]['distance'])/n)
         path = d_paths[u][v]
 
         delete=True
         for i,j in zip(path[:-1],path[1:]):
-            # print(mi_G.edges()[(i,j)]['mutual_information'])
-            tol = 0.00001 # avoid floating point nonsense
             if single_step >= mi_G.edges()[(i,j)]['mutual_information']-tol:
                 delete=False
+        
         if delete:
-            # print("deleting")
             pruned_G.remove_edge(u,v)
         else:
-            print("not deleting")
+            pass
     return pruned_G
 
 
