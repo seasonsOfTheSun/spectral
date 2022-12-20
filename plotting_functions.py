@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import scipy.stats
+import os
 
 def plot_normal(ax, mean, std, min_, max_):
   xrange = np.linspace(min_, max_, 50)
@@ -56,20 +57,30 @@ def pretty_draw_network(G,pos=None):
     nx.draw_networkx_edges(G, ax=ax, pos=pos,width=np.array(list(w.values())))
     ax.axis('off')
 
-def summarize_pruning(edge_list, w_list, sp_list):
-    fig,ax = plt.subplots()
-    ax.hist(w_list - sp_list, bins=200, color='k');
-    ax.set_xlabel("Outranking by shortest path")
-    ax.set_ylabel("freq")
 
-    fig,ax = plt.subplots()
-    ax.scatter(w_list, sp_list, c='k', s=3)
-    ax.set_ylabel("shortest path length between end-nodes")
-    ax.set_xlabel("edge weight")
-    ax.set_title("For each edge in MI network:")
+def plot_features(xy,X,dataset_name, dataset_feature_names):
+    os.makedirs(f"plots/{dataset_name}/features/", exist_ok=True) 
+    fig,axes = plt.subplots(nrows=6,ncols=3,figsize=[15,20])
+    for i,ax in enumerate(axes.flatten()):
+        try:
+            c = ax.scatter(xy[:,0], xy[:,1], s = 20, c = X[:,i],cmap="viridis",edgecolor='k',linewidth=0.5)
+            cax = plt.colorbar(c,ax=ax)
+            ax.set_xlabel("UMAP1")
+            ax.set_ylabel("UMAP2")
+            cax.set_label(dataset_feature_names[i]+"\n(normalized)")
+        except IndexError:
+            ax.axis("off")
+    fig.savefig(f"plots/{dataset_name}/features_all.svg")
 
-    fig,ax = plt.subplots()
-    ax.scatter(w_list, sp_list, c=(w_list-sp_list)<0.01, s=3, cmap = 'seismic')
-    ax.set_ylabel("shortest path length between end-nodes")
-    ax.set_xlabel("edge weight")
-    ax.set_title("isolating redundant edges")
+
+def plot_evecs(xy,evecs,dataset_name):
+    os.makedirs(f"plots/{dataset_name}/",exist_ok=True)
+    fig,axes = plt.subplots(nrows=3,ncols=3,figsize=[16,10])
+    for i,ax in enumerate(axes.flatten()):
+
+        c = ax.scatter(xy[:,0], xy[:,1], s = 20, c = evecs[:,i+1],cmap="PiYG",edgecolor='k',linewidth=0.5)
+        cax = plt.colorbar(c,ax=ax)
+        ax.set_xlabel("UMAP1")
+        ax.set_ylabel("UMAP2")
+        cax.set_label("SEV-"+str(i+1))
+    fig.savefig(f"plots/{dataset_name}/SEV_all.svg") 
